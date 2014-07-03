@@ -1,5 +1,5 @@
 {
-	"name":"flowpack/oauth2/client",
+	"name":"flowpack/oauth2-client",
 	"description":"An OAuth 2.0 authorization framework client for the web application framework TYPO3 Flow.",
 	"keywords":["OAuth2", "TYPO3", "Flow", "Flowpack", "Client"],
 	"type":"typo3-flow-package",
