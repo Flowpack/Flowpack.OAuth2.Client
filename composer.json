@@ -3,7 +3,6 @@
 	"description":"An OAuth 2.0 authorization framework client for the web application framework TYPO3 Flow.",
 	"keywords":["OAuth2", "TYPO3", "Flow", "Flowpack", "Client"],
 	"type":"typo3-flow-package",
-	"minimum-stability": "dev",
 	"authors":[
 		{
 			"name":"Adrian Föder"
@@ -13,7 +12,7 @@
 		}
 	],
 	"require":{
-		"typo3/flow": "dev-master"
+		"typo3/flow": "2.*"
 	},
 	"autoload":{
 		"psr-0":{
