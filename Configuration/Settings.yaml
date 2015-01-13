@@ -1,17 +1,21 @@
+
 TYPO3:
   Flow:
     security:
       authentication:
         providers:
           FacebookOAuth2Provider:
-            provider: 'Flowpack\OAuth2\Client\Provider\FacebookProvider'
+            provider: Flowpack\OAuth2\Client\Provider\FacebookProvider
             providerOptions:
-              authorizationEndpointUri: 'https://www.facebook.com/dialog/oauth' # terminology as of http://tools.ietf.org/html/rfc6749#section-3.1
-              redirectionEndpointUri: 'https://www.wishbase.com/authentication/authenticate' # http://tools.ietf.org/html/rfc6749#section-3.1.2
-              tokenEndpointUri: 'https://graph.facebook.com/oauth/access_token' # http://tools.ietf.org/html/rfc6749#section-3.2
-              tokenEndpointClassName: 'Flowpack\OAuth2\Client\Endpoint\FacebookTokenEndpoint'
-              clientIdentifier: '123456-your-client-identifier'
+              authorizationEndpointUri: 'https://www.facebook.com/dialog/oauth'
+              redirectionEndpointUri: 'https://www.wishbase.com/authentication/authenticate'
+              tokenEndpointUri: 'https://graph.facebook.com/oauth/access_token'
+              tokenEndpointClassName: Flowpack\OAuth2\Client\Endpoint\FacebookTokenEndpoint
+              clientIdentifier: 123456-your-client-identifier
               clientSecret: '-add-your-client-secret-here-'
-              responseType: 'code'
-              scopes: ['email', 'user_location', 'user_birthday']
-              display: 'popup'
+              responseType: code
+              scopes:
+                - email
+                - user_location
+                - user_birthday
+              display: popup
