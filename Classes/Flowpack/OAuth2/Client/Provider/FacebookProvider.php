@@ -20,94 +20,96 @@ use TYPO3\Flow\Security\Exception\UnsupportedAuthenticationTokenException;
 
 /**
  */
-class FacebookProvider extends AbstractClientProvider {
+class FacebookProvider extends AbstractClientProvider
+{
 
-	/**
-	 * @Flow\Inject
-	 * @var SecurityLoggerInterface
-	 */
-	protected $securityLogger;
+    /**
+     * @Flow\Inject
+     * @var SecurityLoggerInterface
+     */
+    protected $securityLogger;
 
-	/**
-	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Security\AccountRepository
-	 */
-	protected $accountRepository;
+    /**
+     * @Flow\Inject
+     * @var \TYPO3\Flow\Security\AccountRepository
+     */
+    protected $accountRepository;
 
-	/**
-	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Security\Context
-	 */
-	protected $securityContext;
+    /**
+     * @Flow\Inject
+     * @var \TYPO3\Flow\Security\Context
+     */
+    protected $securityContext;
 
-	/**
-	 * @Flow\Inject
-	 * @var \Flowpack\OAuth2\Client\Endpoint\FacebookTokenEndpoint
-	 */
-	protected $facebookTokenEndpoint;
+    /**
+     * @Flow\Inject
+     * @var \Flowpack\OAuth2\Client\Endpoint\FacebookTokenEndpoint
+     */
+    protected $facebookTokenEndpoint;
 
-	/**
-	 * Tries to authenticate the given token. Sets isAuthenticated to TRUE if authentication succeeded.
-	 *
-	 * @param TokenInterface $authenticationToken The token to be authenticated
-	 * @throws \TYPO3\Flow\Security\Exception\UnsupportedAuthenticationTokenException
-	 * @return void
-	 */
-	public function authenticate(TokenInterface $authenticationToken) {
-		if (!($authenticationToken instanceof AbstractClientToken)) {
-			throw new UnsupportedAuthenticationTokenException('This provider cannot authenticate the given token.', 1383754993);
-		}
+    /**
+     * Tries to authenticate the given token. Sets isAuthenticated to TRUE if authentication succeeded.
+     *
+     * @param TokenInterface $authenticationToken The token to be authenticated
+     * @throws \TYPO3\Flow\Security\Exception\UnsupportedAuthenticationTokenException
+     * @return void
+     */
+    public function authenticate(TokenInterface $authenticationToken)
+    {
+        if (!($authenticationToken instanceof AbstractClientToken)) {
+            throw new UnsupportedAuthenticationTokenException('This provider cannot authenticate the given token.', 1383754993);
+        }
 
-		$credentials = $authenticationToken->getCredentials();
+        $credentials = $authenticationToken->getCredentials();
 
-		// Inspect the received access token as documented in https://developers.facebook.com/docs/facebook-login/login-flow-for-web-no-jssdk/
-		$tokenInformation = $this->facebookTokenEndpoint->requestValidatedTokenInformation($credentials['accessToken']);
-		if ($tokenInformation === FALSE) {
-			$authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
-			return;
-		}
+        // Inspect the received access token as documented in https://developers.facebook.com/docs/facebook-login/login-flow-for-web-no-jssdk/
+        $tokenInformation = $this->facebookTokenEndpoint->requestValidatedTokenInformation($credentials['accessToken']);
+        if ($tokenInformation === false) {
+            $authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
+            return;
+        }
 
-		// Check if the permitted scopes suffice:
-		$necessaryScopes = $this->options['scopes'];
-		$scopesHavingPermissionFor = $tokenInformation['scopes'];
-		$requiredButNotPermittedScopes = array_diff($necessaryScopes, $scopesHavingPermissionFor);
-		if (count($requiredButNotPermittedScopes) > 0) {
-			$authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
-			$this->securityLogger->log('The permitted scopes do not satisfy the required once.', LOG_NOTICE, array('necessaryScopes' => $necessaryScopes, 'allowedScopes' => $scopesHavingPermissionFor));
-			return;
-		}
+        // Check if the permitted scopes suffice:
+        $necessaryScopes = $this->options['scopes'];
+        $scopesHavingPermissionFor = $tokenInformation['scopes'];
+        $requiredButNotPermittedScopes = array_diff($necessaryScopes, $scopesHavingPermissionFor);
+        if (count($requiredButNotPermittedScopes) > 0) {
+            $authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
+            $this->securityLogger->log('The permitted scopes do not satisfy the required once.', LOG_NOTICE, array('necessaryScopes' => $necessaryScopes, 'allowedScopes' => $scopesHavingPermissionFor));
+            return;
+        }
 
-		// From here, we surely know the user is considered authenticated against the remote service,
-		// yet to check if there is an immanent account present.
-		$authenticationToken->setAuthenticationStatus(TokenInterface::AUTHENTICATION_SUCCESSFUL);
-		/** @var $account \TYPO3\Flow\Security\Account */
-		$account = NULL;
-		$providerName = $this->name;
-		$accountRepository = $this->accountRepository;
-		$this->securityContext->withoutAuthorizationChecks(function() use ($tokenInformation, $providerName, $accountRepository, &$account) {
-			$account = $accountRepository->findByAccountIdentifierAndAuthenticationProviderName($tokenInformation['user_id'], $providerName);
-		});
-		if ($account === NULL) {
-			$account = new Account();
-			$account->setAccountIdentifier($tokenInformation['user_id']);
-			$account->setAuthenticationProviderName($providerName);
-			$this->accountRepository->add($account);
-		}
-		$authenticationToken->setAccount($account);
+        // From here, we surely know the user is considered authenticated against the remote service,
+        // yet to check if there is an immanent account present.
+        $authenticationToken->setAuthenticationStatus(TokenInterface::AUTHENTICATION_SUCCESSFUL);
+        /** @var $account \TYPO3\Flow\Security\Account */
+        $account = null;
+        $providerName = $this->name;
+        $accountRepository = $this->accountRepository;
+        $this->securityContext->withoutAuthorizationChecks(function () use ($tokenInformation, $providerName, $accountRepository, &$account) {
+            $account = $accountRepository->findByAccountIdentifierAndAuthenticationProviderName($tokenInformation['user_id'], $providerName);
+        });
+        if ($account === null) {
+            $account = new Account();
+            $account->setAccountIdentifier($tokenInformation['user_id']);
+            $account->setAuthenticationProviderName($providerName);
+            $this->accountRepository->add($account);
+        }
+        $authenticationToken->setAccount($account);
 
-		// request long-live token and attach that to the account
-		$longLivedToken = $this->facebookTokenEndpoint->requestLongLivedToken($credentials['accessToken']);
-		$account->setCredentialsSource($longLivedToken);
-		$this->accountRepository->update($account);
-	}
+        // request long-live token and attach that to the account
+        $longLivedToken = $this->facebookTokenEndpoint->requestLongLivedToken($credentials['accessToken']);
+        $account->setCredentialsSource($longLivedToken);
+        $this->accountRepository->update($account);
+    }
 
-	/**
-	 * Returns the class names of the tokens this provider is responsible for.
-	 *
-	 * @return array The class name of the token this provider is responsible for
-	 */
-	public function getTokenClassNames() {
-		return array('Flowpack\OAuth2\Client\Token\FacebookToken');
-	}
-
+    /**
+     * Returns the class names of the tokens this provider is responsible for.
+     *
+     * @return array The class name of the token this provider is responsible for
+     */
+    public function getTokenClassNames()
+    {
+        return array('Flowpack\OAuth2\Client\Token\FacebookToken');
+    }
 }

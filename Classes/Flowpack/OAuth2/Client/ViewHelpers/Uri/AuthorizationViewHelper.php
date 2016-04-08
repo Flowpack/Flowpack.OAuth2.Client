@@ -17,20 +17,21 @@ use TYPO3\Fluid\Core\ViewHelper\AbstractViewHelper;
 
 /**
  */
-class AuthorizationViewHelper extends AbstractViewHelper {
+class AuthorizationViewHelper extends AbstractViewHelper
+{
 
-	/**
-	 * @Flow\Inject
-	 * @var UriBuilder
-	 */
-	protected $oauthUriBuilder;
+    /**
+     * @Flow\Inject
+     * @var UriBuilder
+     */
+    protected $oauthUriBuilder;
 
-	/**
-	 * @param string $providerName The name of the authentication provider as defined in the Settings
-	 * @return string
-	 */
-	public function render($providerName) {
-		return $this->oauthUriBuilder->getAuthorizationUri($providerName);
-	}
-
+    /**
+     * @param string $providerName The name of the authentication provider as defined in the Settings
+     * @return string
+     */
+    public function render($providerName)
+    {
+        return $this->oauthUriBuilder->getAuthorizationUri($providerName);
+    }
 }

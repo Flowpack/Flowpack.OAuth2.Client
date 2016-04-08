@@ -16,6 +16,6 @@ use TYPO3\Flow\Security\Authentication\Provider\AbstractProvider;
 
 /**
  */
-abstract class AbstractClientProvider extends AbstractProvider {
-
+abstract class AbstractClientProvider extends AbstractProvider
+{
 }

@@ -15,5 +15,6 @@ use TYPO3\Flow\Annotations as Flow;
 
 /**
  */
-class FacebookToken extends AbstractClientToken {
+class FacebookToken extends AbstractClientToken
+{
 }

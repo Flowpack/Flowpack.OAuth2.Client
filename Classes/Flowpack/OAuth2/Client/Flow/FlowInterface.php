@@ -18,40 +18,41 @@ use TYPO3\Flow\Security\Authentication\TokenInterface;
 
 /**
  */
-interface FlowInterface {
+interface FlowInterface
+{
 
-	/**
-	 * @return AbstractClientToken
-	 */
-	public function getChargedAuthenticatedTokenHavingNoPartyAttached();
+    /**
+     * @return AbstractClientToken
+     */
+    public function getChargedAuthenticatedTokenHavingNoPartyAttached();
 
-	/**
-	 * @param \TYPO3\Flow\Security\Authentication\TokenInterface|\Flowpack\OAuth2\Client\Token\AbstractClientToken $token
-	 * @return TokenInterface
-	 */
-	public function getTokenOfForeignAccountOf(AbstractClientToken $token);
+    /**
+     * @param \TYPO3\Flow\Security\Authentication\TokenInterface|\Flowpack\OAuth2\Client\Token\AbstractClientToken $token
+     * @return TokenInterface
+     */
+    public function getTokenOfForeignAccountOf(AbstractClientToken $token);
 
-	/**
-	 * @param AbstractClientToken $token
-	 * @return Account
-	 */
-	public function getForeignAccountFor(AbstractClientToken $token);
+    /**
+     * @param AbstractClientToken $token
+     * @return Account
+     */
+    public function getForeignAccountFor(AbstractClientToken $token);
 
-	/**
-	 * @param AbstractClientToken $token
-	 */
-	public function createPartyAndAttachToAccountFor(AbstractClientToken $token);
+    /**
+     * @param AbstractClientToken $token
+     */
+    public function createPartyAndAttachToAccountFor(AbstractClientToken $token);
 
-	/**
-	 * @param TokenInterface $foreignAccountToken
-	 * @param AbstractClientToken $possibleOAuthTokenAuthenticatedWithoutParty
-	 */
-	public function setPartyOfAuthenticatedTokenAndAttachToAccountFor(TokenInterface $foreignAccountToken, AbstractClientToken $possibleOAuthTokenAuthenticatedWithoutParty);
+    /**
+     * @param TokenInterface $foreignAccountToken
+     * @param AbstractClientToken $possibleOAuthTokenAuthenticatedWithoutParty
+     */
+    public function setPartyOfAuthenticatedTokenAndAttachToAccountFor(TokenInterface $foreignAccountToken, AbstractClientToken $possibleOAuthTokenAuthenticatedWithoutParty);
 
-	/**
-	 * Returns the token class name this flow is responsible for
-	 *
-	 * @return string
-	 */
-	public function getTokenClassName();
+    /**
+     * Returns the token class name this flow is responsible for
+     *
+     * @return string
+     */
+    public function getTokenClassName();
 }
