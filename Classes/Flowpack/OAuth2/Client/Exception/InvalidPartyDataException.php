@@ -17,6 +17,6 @@ use TYPO3\Flow\Annotations as Flow;
 /**
  *
  */
-class InvalidPartyDataException extends Exception {
-
+class InvalidPartyDataException extends Exception
+{
 }

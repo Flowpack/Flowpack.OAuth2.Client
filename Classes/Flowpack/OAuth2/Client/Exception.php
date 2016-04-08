@@ -13,6 +13,6 @@ namespace Flowpack\OAuth2\Client;
 
 /**
  */
-class Exception extends \TYPO3\Flow\Exception {
-
+class Exception extends \TYPO3\Flow\Exception
+{
 }

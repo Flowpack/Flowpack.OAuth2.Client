@@ -17,29 +17,30 @@ use TYPO3\Flow\Security\Authentication\TokenInterface;
 
 /**
  */
-abstract class AbstractFlow implements FlowInterface {
+abstract class AbstractFlow implements FlowInterface
+{
 
-	/**
-	 * @Flow\Inject
-	 * @var \TYPO3\Flow\Security\Context
-	 */
-	protected $securityContext;
+    /**
+     * @Flow\Inject
+     * @var \TYPO3\Flow\Security\Context
+     */
+    protected $securityContext;
 
-	/**
-	 * This returns the (first) *authenticated* OAuth token which doesn't have a party attached.
-	 *
-	 *@return AbstractClientToken
-	 */
-	public function getChargedAuthenticatedTokenHavingNoPartyAttached() {
-		/** @var $token AbstractClientToken */
-		foreach ((array)$this->securityContext->getAuthenticationTokensOfType($this->getTokenClassName()) as $token) {
-			if ($token->getAuthenticationStatus() === TokenInterface::AUTHENTICATION_SUCCESSFUL
-				&& ($token->getAccount() === NULL || $token->getAccount()->getParty() === NULL)
-			) {
-				return $token;
-			}
-		}
-		return NULL;
-	}
-
+    /**
+     * This returns the (first) *authenticated* OAuth token which doesn't have a party attached.
+     *
+     *@return AbstractClientToken
+     */
+    public function getChargedAuthenticatedTokenHavingNoPartyAttached()
+    {
+        /** @var $token AbstractClientToken */
+        foreach ((array)$this->securityContext->getAuthenticationTokensOfType($this->getTokenClassName()) as $token) {
+            if ($token->getAuthenticationStatus() === TokenInterface::AUTHENTICATION_SUCCESSFUL
+                && ($token->getAccount() === null || $token->getAccount()->getParty() === null)
+            ) {
+                return $token;
+            }
+        }
+        return null;
+    }
 }
