@@ -54,10 +54,12 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
         $responseArray = json_decode($responseContent, true, 16, JSON_BIGINT_AS_STRING);
         $responseArray['data']['app_id'] = (string)$responseArray['data']['app_id'];
         $responseArray['data']['user_id'] = (string)$responseArray['data']['user_id'];
+        $clientIdentifier = (string)$this->clientIdentifier;
+
         if (!$responseArray['data']['is_valid']
-            || $responseArray['data']['app_id'] !== $this->clientIdentifier
+            || $responseArray['data']['app_id'] !== $clientIdentifier
         ) {
-            $this->securityLogger->log('Requesting validated token information from the Facebook endpoint did not succeed.', LOG_NOTICE, array('response' => var_export($responseArray, true), 'clientIdentifier' => $this->clientIdentifier));
+            $this->securityLogger->log('Requesting validated token information from the Facebook endpoint did not succeed.', LOG_NOTICE, array('response' => var_export($responseArray, true), 'clientIdentifier' => $clientIdentifier));
             return false;
         } else {
             return $responseArray['data'];
