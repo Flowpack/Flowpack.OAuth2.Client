@@ -17,6 +17,7 @@ use TYPO3\Flow\Log\SecurityLoggerInterface;
 use TYPO3\Flow\Security\Account;
 use TYPO3\Flow\Security\Authentication\TokenInterface;
 use TYPO3\Flow\Security\Exception\UnsupportedAuthenticationTokenException;
+use TYPO3\Flow\Security\Policy\PolicyService;
 
 /**
  */
@@ -28,6 +29,12 @@ class FacebookProvider extends AbstractClientProvider
      * @var SecurityLoggerInterface
      */
     protected $securityLogger;
+
+    /**
+     * @Flow\Inject
+     * @var PolicyService
+     */
+    protected $policyService;
 
     /**
      * @Flow\Inject
@@ -95,10 +102,17 @@ class FacebookProvider extends AbstractClientProvider
         $this->securityContext->withoutAuthorizationChecks(function () use ($tokenInformation, $providerName, $accountRepository, &$account) {
             $account = $accountRepository->findByAccountIdentifierAndAuthenticationProviderName($tokenInformation['user_id'], $providerName);
         });
+
         if ($account === null) {
             $account = new Account();
             $account->setAccountIdentifier($tokenInformation['user_id']);
             $account->setAuthenticationProviderName($providerName);
+
+            $roles = array();
+            foreach ($this->options['authenticateRoles'] as $roleIdentifier) {
+                $roles[] = $this->policyService->getRole($roleIdentifier);
+            }
+            $account->setRoles($roles);
             $this->accountRepository->add($account);
         }
         $authenticationToken->setAccount($account);
