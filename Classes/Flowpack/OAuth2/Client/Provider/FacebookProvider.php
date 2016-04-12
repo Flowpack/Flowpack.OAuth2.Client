@@ -48,6 +48,12 @@ class FacebookProvider extends AbstractClientProvider
     protected $facebookTokenEndpoint;
 
     /**
+     * @Flow\Inject
+     * @var \TYPO3\Flow\Persistence\PersistenceManagerInterface
+     */
+    protected $persistenceManager;
+
+    /**
      * Tries to authenticate the given token. Sets isAuthenticated to TRUE if authentication succeeded.
      *
      * @param TokenInterface $authenticationToken The token to be authenticated
@@ -101,6 +107,8 @@ class FacebookProvider extends AbstractClientProvider
         $longLivedToken = $this->facebookTokenEndpoint->requestLongLivedToken($credentials['accessToken']);
         $account->setCredentialsSource($longLivedToken);
         $this->accountRepository->update($account);
+
+        $this->persistenceManager->persistAll();
     }
 
     /**
