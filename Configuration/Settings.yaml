@@ -7,15 +7,24 @@ TYPO3:
           FacebookOAuth2Provider:
             provider: Flowpack\OAuth2\Client\Provider\FacebookProvider
             providerOptions:
+              #authenticateRoles: ['TYPO3.Flow.SomeRole']
               authorizationEndpointUri: 'https://www.facebook.com/dialog/oauth'
-              redirectionEndpointUri: 'https://www.wishbase.com/authentication/authenticate'
+              # redirectionEndpointUri must be some page on your site
+              redirectionEndpointUri: 'https://www.yoursite.com/authentication/authenticate'
               tokenEndpointUri: 'https://graph.facebook.com/oauth/access_token'
               tokenEndpointClassName: Flowpack\OAuth2\Client\Endpoint\FacebookTokenEndpoint
               clientIdentifier: 123456-your-client-identifier
               clientSecret: '-add-your-client-secret-here-'
               responseType: code
+              # Reference for scopes https://developers.facebook.com/docs/facebook-login/permissions
               scopes:
                 - email
-                - user_location
-                - user_birthday
+              #Reference for fields https://developers.facebook.com/docs/graph-api/reference/user
+              fields:
+                - email
+                - first_name
+                - last_name
+              # per default an account with a role (if 'authenticateRoles' is defined) is only created
+              # if 'partyCreation' is TRUE a Party with the given 'fields' is created
+              partyCreation: TRUE
               display: popup
