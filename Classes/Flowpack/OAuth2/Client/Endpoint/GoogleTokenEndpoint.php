@@ -20,7 +20,7 @@ use TYPO3\Flow\Log\SecurityLoggerInterface;
 /**
  * @Flow\Scope("singleton")
  */
-class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEndpointInterface
+class GoogleTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEndpointInterface
 {
 
     /**
@@ -30,28 +30,24 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
     protected $securityLogger;
 
     /**
-     * Inspect the received access token as documented in https://developers.facebook.com/docs/facebook-login/access-tokens/, section Getting Info about Tokens and Debugging
      *
      * @param string $tokenToInspect
      * @return array
      * @throws OAuth2Exception
      */
-    public function requestValidatedTokenInformation($tokenToInspect)
+    public function requestValidatedTokenInformation($tokenToInspect, $scope = array())
     {
-        $this->securityLogger->log('NEIN davor FACEBOOK requestValidatedTokenInformation.', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect, true)));
-        $applicationToken = $this->requestClientCredentialsGrantAccessToken();
+        $this->securityLogger->log('NEIN davor GOOGLE requestValidatedTokenInformation.', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect, true)));
 
-        $this->securityLogger->log('FACEBOOK requestValidatedTokenInformation.', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect, true), '$applicationToken' => var_export($applicationToken, true)));
-        $this->securityLogger->log('FACEBOOK [\'access_token\'].', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect['access_token'], true)));
-
-
-        $this->securityLogger->log('FACEBOOK [\'$applicationToken\'].', LOG_NOTICE, array('$applicationToken' => var_export($applicationToken, true)));
+//        $applicationToken = $this->requestClientCredentialsGrantAccessToken($scope);
+//        $this->securityLogger->log('tata GOOGLE requestClientCredentialsGrantAccessToken requestValidatedTokenInformation.', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect, true), '$applicationToken' => var_export($applicationToken, true)));
 
         $requestArguments = array(
             'input_token' => $tokenToInspect['access_token'],
-            'access_token' => $applicationToken['access_token']
+            'id_token' => $tokenToInspect['id_token']
         );
-        $request = Request::create(new Uri('https://graph.facebook.com/debug_token?' . http_build_query($requestArguments)));
+
+        $request = Request::create(new Uri('https://www.googleapis.com/oauth2/v3/tokeninfo?' . http_build_query($requestArguments)));
         $response = $this->requestEngine->sendRequest($request);
         $responseContent = $response->getContent();
         if ($response->getStatusCode() !== 200) {
@@ -61,19 +57,16 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
         $responseArray = json_decode($responseContent, true, 16, JSON_BIGINT_AS_STRING);
 
         $this->securityLogger->log('TATAT $responseArray.', LOG_NOTICE, array('$responseArray' => var_export($responseArray, true)));
-
-        $responseArray['data']['app_id'] = (string)$responseArray['data']['app_id'];
-        $responseArray['data']['user_id'] = (string)$responseArray['data']['user_id'];
+        $responseArray['aud'] = (string)$responseArray['aud'];
+        $responseArray['sub'] = (string)$responseArray['sub'];
         $clientIdentifier = (string)$this->clientIdentifier;
 
-        if (!$responseArray['data']['is_valid']
-            || $responseArray['data']['app_id'] !== $clientIdentifier
-        ) {
-            $this->securityLogger->log('Requesting validated token information from the Facebook endpoint did not succeed.', LOG_NOTICE, array('response' => var_export($responseArray, true), 'clientIdentifier' => $clientIdentifier));
+        if ($responseArray['aud'] !== $clientIdentifier) {
+            $this->securityLogger->log('Requesting validated token information from the Google endpoint did not succeed.', LOG_NOTICE, array('response' => var_export($responseArray, true), 'clientIdentifier' => $clientIdentifier));
             return false;
-        } else {
-            return $responseArray['data'];
         }
+
+        return $responseArray;
     }
 
     /**
@@ -82,6 +75,7 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
      */
     public function requestLongLivedToken($shortLivedToken)
     {
-        return $this->requestAccessToken('fb_exchange_token', array('fb_exchange_token' => $shortLivedToken));
+        $this->securityLogger->log('GOOGLE requestLongLivedToken.', LOG_NOTICE, array('$shortLivedToken' => var_export($shortLivedToken, true)));
+        return $this->requestAccessToken('refresh_token', array('refresh_token' => $shortLivedToken));
     }
 }

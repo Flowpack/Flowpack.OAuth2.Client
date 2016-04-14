@@ -26,7 +26,7 @@ use TYPO3\Party\Domain\Repository\PartyRepository;
 
 /**
  */
-class FacebookFlow extends AbstractFlow implements FlowInterface
+class GoogleFlow extends AbstractFlow implements FlowInterface
 {
 
     /**
@@ -49,9 +49,9 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
 
     /**
      * @Flow\Inject
-     * @var \Flowpack\OAuth2\Client\Utility\FacebookApiClient
+     * @var \Flowpack\OAuth2\Client\Utility\GoogleApiClient
      */
-    protected $facebookApiClient;
+    protected $googleApiClient;
 
     /**
      * @Flow\Inject
@@ -154,11 +154,12 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
      */
     public function createPartyAndAttachToAccountFor(AbstractClientToken $token)
     {
+
         $this->initializeUserData($token);
         $userData = $this->authenticationServicesUserData[(string)$token];
 
         $party = new Person();
-        $party->setName(new PersonName('', $userData['first_name'], '', $userData['last_name']));
+        $party->setName(new PersonName('', $userData['given_name'], '', $userData['family_name']));
         // Todo: this is not covered by the Person implementation, we should have a solution for that
         #$party->setBirthDate(\DateTime::createFromFormat('!m/d/Y', $userData['birthday'], new \DateTimeZone('UTC')));
         #$party->setGender(substr($userData['gender'], 0, 1));
@@ -199,27 +200,10 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
      */
     protected function initializeUserData(AbstractClientToken $token)
     {
+        $query = '/userinfo/v2/me';
         $credentials = $token->getCredentials();
-        $this->facebookApiClient->setCurrentAccessToken($credentials['access_token']);
-        $query = $this->buildFacebookQuery();
-        $content = $this->facebookApiClient->query($query)->getContent();
+        $this->googleApiClient->setCurrentAccessToken($credentials['access_token']);
+        $content = $this->googleApiClient->query($query)->getContent();
         $this->authenticationServicesUserData[(string)$token] = json_decode($content, true);
-    }
-
-    /**
-     * builds the query from the fields in Settings.yaml
-     * there is no further check if the fields are allowed in the scopes
-     * for further information have a look at https://developers.facebook.com/docs/facebook-login/permissions
-     *
-     * @return string
-     */
-    protected function buildFacebookQuery()
-    {
-        $query = '/me';
-        $this->authenticationServicesFields = $this->configurationManager->getConfiguration(ConfigurationManager::CONFIGURATION_TYPE_SETTINGS, 'TYPO3.Flow.security.authentication.providers.FacebookOAuth2Provider.providerOptions.fields');
-        $fields = implode(',', $this->authenticationServicesFields);
-
-        $query = $query . '?fields=' . $fields;
-        return $query;
     }
 }
