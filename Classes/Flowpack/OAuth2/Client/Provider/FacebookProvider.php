@@ -56,6 +56,12 @@ class FacebookProvider extends AbstractClientProvider
 
     /**
      * @Flow\Inject
+     * @var \Flowpack\OAuth2\Client\Flow\FacebookFlow
+     */
+    protected $facebookFlow;
+
+    /**
+     * @Flow\Inject
      * @var \TYPO3\Flow\Persistence\PersistenceManagerInterface
      */
     protected $persistenceManager;
@@ -97,6 +103,7 @@ class FacebookProvider extends AbstractClientProvider
         $authenticationToken->setAuthenticationStatus(TokenInterface::AUTHENTICATION_SUCCESSFUL);
         /** @var $account \TYPO3\Flow\Security\Account */
         $account = null;
+        $isNewCreatedAccount = false;
         $providerName = $this->name;
         $accountRepository = $this->accountRepository;
         $this->securityContext->withoutAuthorizationChecks(function () use ($tokenInformation, $providerName, $accountRepository, &$account) {
@@ -105,9 +112,12 @@ class FacebookProvider extends AbstractClientProvider
 
         if ($account === null) {
             $account = new Account();
+            $isNewCreatedAccount = true;
             $account->setAccountIdentifier($tokenInformation['user_id']);
             $account->setAuthenticationProviderName($providerName);
 
+            // adding in Settings.yaml specified roles to the account
+            // so the account can be authenticate against a role in the frontend for example
             $roles = array();
             foreach ($this->options['authenticateRoles'] as $roleIdentifier) {
                 $roles[] = $this->policyService->getRole($roleIdentifier);
@@ -120,9 +130,15 @@ class FacebookProvider extends AbstractClientProvider
         // request long-live token and attach that to the account
         $longLivedToken = $this->facebookTokenEndpoint->requestLongLivedToken($credentials['accessToken']);
         $account->setCredentialsSource($longLivedToken);
-        $this->accountRepository->update($account);
+        $account->authenticationAttempted(TokenInterface::AUTHENTICATION_SUCCESSFUL);
 
+        $this->accountRepository->update($account);
         $this->persistenceManager->persistAll();
+
+        // Only if defined a Party for the account is created
+        if ($this->options['partyCreation'] && $isNewCreatedAccount) {
+            $this->facebookFlow->createPartyAndAttachToAccountFor($authenticationToken);
+        }
     }
 
     /**
