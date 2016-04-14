@@ -167,6 +167,7 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
         $electronicAddress->setIdentifier($userData['email']);
         $electronicAddress->isApproved(true);
         $party->addElectronicAddress($electronicAddress);
+        $party->setPrimaryElectronicAddress($electronicAddress);
 
         $partyValidator = $this->validatorResolver->getBaseValidatorConjunction('TYPO3\Party\Domain\Model\Person');
         $validationResult = $partyValidator->validate($party);
