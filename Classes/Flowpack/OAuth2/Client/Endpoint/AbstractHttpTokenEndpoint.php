@@ -17,18 +17,10 @@ use TYPO3\Flow\Http\Request;
 use TYPO3\Flow\Http\Uri;
 use TYPO3\Flow\Utility\Arrays;
 
-use TYPO3\Flow\Log\SecurityLoggerInterface;
-
 /**
  */
 abstract class AbstractHttpTokenEndpoint implements TokenEndpointInterface
 {
-
-    /**
-     * @Flow\Inject
-     * @var SecurityLoggerInterface
-     */
-    protected $securityLogger;
 
     /**
      * @Flow\Inject
@@ -76,8 +68,6 @@ abstract class AbstractHttpTokenEndpoint implements TokenEndpointInterface
      */
     public function requestAuthorizationCodeGrantAccessToken($code, $redirectUri = null, $clientIdentifier = null)
     {
-
-        $this->securityLogger->log('requestAuthorizationCodeGrantAccessToken.', LOG_NOTICE, array('$code' => $code, '$redirectUri' => $redirectUri, '$clientIdentifier' => $clientIdentifier ));
         $accessToken = $this->requestAccessToken(TokenEndpointInterface::GRANT_TYPE_AUTHORIZATION_CODE, array(
             'code' => $code,
             'redirect_uri' => $redirectUri,
@@ -109,9 +99,7 @@ abstract class AbstractHttpTokenEndpoint implements TokenEndpointInterface
      */
     public function requestClientCredentialsGrantAccessToken($scope = array())
     {
-        $this->securityLogger->log('bevor requestClientCredentialsGrantAccessToken.', LOG_NOTICE, array('$scope' => var_export($scope, true)));
         $accessToken = $this->requestAccessToken(TokenEndpointInterface::GRANT_TYPE_CLIENT_CREDENTIALS, $scope);
-
         return $accessToken;
     }
 
@@ -137,19 +125,13 @@ abstract class AbstractHttpTokenEndpoint implements TokenEndpointInterface
             'client_id' => $this->clientIdentifier,
             'client_secret' => $this->clientSecret
         );
-
-        $this->securityLogger->log('$additionalParameters.', LOG_NOTICE, array('$additionalParameters' => var_export($additionalParameters, true)));
-        
         $parameters = Arrays::arrayMergeRecursiveOverrule($parameters, $additionalParameters, false, false);
-
-        $this->securityLogger->log('arrayMergeRecursiveOverrule.', LOG_NOTICE, array('$parameters' => var_export($parameters, true)));
 
         $request = Request::create(new Uri($this->endpointUri), 'POST', $parameters);
         $request->setHeader('Content-Type', 'application/x-www-form-urlencoded');
 
         $response = $this->requestEngine->sendRequest($request);
 
-        $this->securityLogger->log('$response.' . $grantType, LOG_NOTICE, array('$response' => var_export($response->getContent(), true)));
         if ($response->getStatusCode() !== 200) {
             throw new OAuth2Exception(sprintf('The response when requesting the access token was not as expected, code and message was: %d %s', $response->getStatusCode(), $response->getContent()), 1383749757);
         }
@@ -165,10 +147,6 @@ abstract class AbstractHttpTokenEndpoint implements TokenEndpointInterface
             $responseComponents = $responseComponentsParsedString;
         }
 
-//        var_dump($responseComponents);
-
-
-//        return $responseComponents['access_token'];
         return $responseComponents;
     }
 }

@@ -96,30 +96,14 @@ class GoogleProvider extends AbstractClientProvider
         }
 
         $credentials = $authenticationToken->getCredentials();
-
-        $this->securityLogger->log('allleeee $credentials.', LOG_NOTICE, array('$credentials' => var_export($credentials, true)));
-
-
         $scope = $this->buildScopeParameter();
         $tokenInformation = $this->googleTokenEndpoint->requestValidatedTokenInformation($credentials, $scope);
-
-        $this->securityLogger->log('GOOGLE $tokenInformation.', LOG_NOTICE, array('$tokenInformation' => var_export($tokenInformation, true)));
 
         if ($tokenInformation === false) {
             $authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
             return;
         }
-//
-//        // Check if the permitted scopes suffice:
-//        $necessaryScopes = $this->options['scopes'];
-//        $scopesHavingPermissionFor = $tokenInformation['scopes'];
-//        $requiredButNotPermittedScopes = array_diff($necessaryScopes, $scopesHavingPermissionFor);
-//        if (count($requiredButNotPermittedScopes) > 0) {
-//            $authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
-//            $this->securityLogger->log('The permitted scopes do not satisfy the required once.', LOG_NOTICE, array('necessaryScopes' => $necessaryScopes, 'allowedScopes' => $scopesHavingPermissionFor));
-//            return;
-//        }
-//
+
         // From here, we surely know the user is considered authenticated against the remote service,
         // yet to check if there is an immanent account present.
         $authenticationToken->setAuthenticationStatus(TokenInterface::AUTHENTICATION_SUCCESSFUL);
@@ -152,7 +136,6 @@ class GoogleProvider extends AbstractClientProvider
 
         // request long-live token and attach that to the account
         $longLivedToken = $this->googleTokenEndpoint->requestLongLivedToken($credentials['access_token']);
-        $this->securityLogger->log('GOOGLE $longLivedToken.', LOG_NOTICE, array('$longLivedToken' => var_export($longLivedToken, true)));
         $account->setCredentialsSource($longLivedToken['access_token']);
         $account->authenticationAttempted(TokenInterface::AUTHENTICATION_SUCCESSFUL);
 
@@ -161,7 +144,6 @@ class GoogleProvider extends AbstractClientProvider
 
         // Only if defined a Party for the account is created
         if ($this->options['partyCreation'] && $isNewCreatedAccount) {
-            $this->securityLogger->log('partyCreation.', LOG_NOTICE, array('$credentials' => var_export($credentials, true)));
             $this->googleFlow->createPartyAndAttachToAccountFor($authenticationToken);
         }
     }
@@ -176,7 +158,11 @@ class GoogleProvider extends AbstractClientProvider
         return array('Flowpack\OAuth2\Client\Token\GoogleToken');
     }
 
-
+    /**
+     * Returns the scopes
+     *
+     * @return array
+     */
     protected function buildScopeParameter()
     {
         $scopes = $this->configurationManager->getConfiguration(ConfigurationManager::CONFIGURATION_TYPE_SETTINGS, 'TYPO3.Flow.security.authentication.providers.GoogleOAuth2Provider.providerOptions.scopes');
@@ -184,7 +170,5 @@ class GoogleProvider extends AbstractClientProvider
         $scopes = array('scope' => $scope);
 
         return $scopes;
-
-
     }
 }

@@ -38,15 +38,7 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
      */
     public function requestValidatedTokenInformation($tokenToInspect)
     {
-        $this->securityLogger->log('NEIN davor FACEBOOK requestValidatedTokenInformation.', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect, true)));
         $applicationToken = $this->requestClientCredentialsGrantAccessToken();
-
-        $this->securityLogger->log('FACEBOOK requestValidatedTokenInformation.', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect, true), '$applicationToken' => var_export($applicationToken, true)));
-        $this->securityLogger->log('FACEBOOK [\'access_token\'].', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect['access_token'], true)));
-
-
-        $this->securityLogger->log('FACEBOOK [\'$applicationToken\'].', LOG_NOTICE, array('$applicationToken' => var_export($applicationToken, true)));
-
         $requestArguments = array(
             'input_token' => $tokenToInspect['access_token'],
             'access_token' => $applicationToken['access_token']
@@ -59,9 +51,6 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
         }
 
         $responseArray = json_decode($responseContent, true, 16, JSON_BIGINT_AS_STRING);
-
-        $this->securityLogger->log('TATAT $responseArray.', LOG_NOTICE, array('$responseArray' => var_export($responseArray, true)));
-
         $responseArray['data']['app_id'] = (string)$responseArray['data']['app_id'];
         $responseArray['data']['user_id'] = (string)$responseArray['data']['user_id'];
         $clientIdentifier = (string)$this->clientIdentifier;

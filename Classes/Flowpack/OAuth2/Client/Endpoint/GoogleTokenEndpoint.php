@@ -35,13 +35,8 @@ class GoogleTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEndp
      * @return array
      * @throws OAuth2Exception
      */
-    public function requestValidatedTokenInformation($tokenToInspect, $scope = array())
+    public function requestValidatedTokenInformation($tokenToInspect)
     {
-        $this->securityLogger->log('NEIN davor GOOGLE requestValidatedTokenInformation.', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect, true)));
-
-//        $applicationToken = $this->requestClientCredentialsGrantAccessToken($scope);
-//        $this->securityLogger->log('tata GOOGLE requestClientCredentialsGrantAccessToken requestValidatedTokenInformation.', LOG_NOTICE, array('$tokenToInspect' => var_export($tokenToInspect, true), '$applicationToken' => var_export($applicationToken, true)));
-
         $requestArguments = array(
             'input_token' => $tokenToInspect['access_token'],
             'id_token' => $tokenToInspect['id_token']
@@ -55,8 +50,6 @@ class GoogleTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEndp
         }
 
         $responseArray = json_decode($responseContent, true, 16, JSON_BIGINT_AS_STRING);
-
-        $this->securityLogger->log('TATAT $responseArray.', LOG_NOTICE, array('$responseArray' => var_export($responseArray, true)));
         $responseArray['aud'] = (string)$responseArray['aud'];
         $responseArray['sub'] = (string)$responseArray['sub'];
         $clientIdentifier = (string)$this->clientIdentifier;
@@ -75,7 +68,6 @@ class GoogleTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEndp
      */
     public function requestLongLivedToken($shortLivedToken)
     {
-        $this->securityLogger->log('GOOGLE requestLongLivedToken.', LOG_NOTICE, array('$shortLivedToken' => var_export($shortLivedToken, true)));
         return $this->requestAccessToken('refresh_token', array('refresh_token' => $shortLivedToken));
     }
 }

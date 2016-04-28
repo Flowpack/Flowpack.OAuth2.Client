@@ -81,13 +81,8 @@ class FacebookProvider extends AbstractClientProvider
 
         $credentials = $authenticationToken->getCredentials();
 
-        $this->securityLogger->log('$credentials.', LOG_NOTICE, array('$credentials' => var_export($credentials, true)));
-
         // Inspect the received access token as documented in https://developers.facebook.com/docs/facebook-login/login-flow-for-web-no-jssdk/
-//        $tokenInformation = $this->facebookTokenEndpoint->requestValidatedTokenInformation($credentials['accessToken']);
         $tokenInformation = $this->facebookTokenEndpoint->requestValidatedTokenInformation($credentials);
-
-        $this->securityLogger->log('FACEBOOK $tokenInformation.', LOG_NOTICE, array('$tokenInformation' => var_export($tokenInformation, true)));
 
         if ($tokenInformation === false) {
             $authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
@@ -135,9 +130,6 @@ class FacebookProvider extends AbstractClientProvider
 
         // request long-live token and attach that to the account
         $longLivedToken = $this->facebookTokenEndpoint->requestLongLivedToken($credentials['access_token']);
-
-        $this->securityLogger->log('FACEBOOK $longLivedToken.', LOG_NOTICE, array('$longLivedToken' => var_export($credentials, true)));
-
         $account->setCredentialsSource($longLivedToken['access_token']);
         $account->authenticationAttempted(TokenInterface::AUTHENTICATION_SUCCESSFUL);
 
