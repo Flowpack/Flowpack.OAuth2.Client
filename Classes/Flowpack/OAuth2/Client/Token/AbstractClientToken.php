@@ -90,7 +90,8 @@ abstract class AbstractClientToken extends AbstractToken
         $code = $actionRequest->getArgument('code');
         $redirectUri = $this->oauthUriBuilder->getRedirectionEndpointUri($this->authenticationProviderName);
         try {
-            $this->credentials['accessToken'] = $this->tokenEndpoint->requestAuthorizationCodeGrantAccessToken($code, $redirectUri);
+//            $this->credentials['accessToken'] = $this->tokenEndpoint->requestAuthorizationCodeGrantAccessToken($code, $redirectUri);
+            $this->credentials = $this->tokenEndpoint->requestAuthorizationCodeGrantAccessToken($code, $redirectUri);
             $this->setAuthenticationStatus(TokenInterface::AUTHENTICATION_NEEDED);
         } catch (Exception $exception) {
             $this->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
