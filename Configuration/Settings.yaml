@@ -42,7 +42,7 @@ TYPO3:
               clientIdentifier: '123456youridentifier.apps.googleusercontent.com'
               clientSecret: '-add-your-client-secret-here-'
               responseType: code
-              # Reference for scopes https://developers.facebook.com/docs/facebook-login/permissions
+              # Reference for scopes https://developers.google.com/identity/protocols/googlescopes
               scopes:
                 - https://www.googleapis.com/auth/userinfo.email
                 - https://www.googleapis.com/auth/userinfo.profile
