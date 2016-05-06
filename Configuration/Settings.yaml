@@ -62,3 +62,5 @@ TYPO3:
               # per default an account with a role (if 'authenticateRoles' is defined) is only created
               # if 'partyCreation' is TRUE a Party with the given 'fields' is created
               partyCreation: TRUE
+
+              display: popup
