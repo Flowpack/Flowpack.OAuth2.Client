@@ -32,7 +32,7 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
     /**
      * Inspect the received access token as documented in https://developers.facebook.com/docs/facebook-login/access-tokens/, section Getting Info about Tokens and Debugging
      *
-     * @param string $tokenToInspect
+     * @param array $tokenToInspect
      * @return array
      * @throws OAuth2Exception
      */
