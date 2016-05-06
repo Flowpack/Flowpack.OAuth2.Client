@@ -36,24 +36,29 @@ TYPO3:
 
               display: popup
 
+
           GoogleOAuth2Provider:
             provider: Flowpack\OAuth2\Client\Provider\GoogleProvider
             providerOptions:
               #authenticateRoles: ['TYPO3.Flow.SomeRole']
+
               authorizationEndpointUri: 'https://accounts.google.com/o/oauth2/auth'
+
               # redirectionEndpointUri must be some page on your site which is defined in your google API manager
               # https://console.developers.google.com/apis/library
               redirectionEndpointUri: 'https://www.yoursite.com/authentication/authenticate'
+
               tokenEndpointUri: 'https://accounts.google.com/o/oauth2/token'
               tokenEndpointClassName: Flowpack\OAuth2\Client\Endpoint\GoogleTokenEndpoint
               clientIdentifier: '123456youridentifier.apps.googleusercontent.com'
               clientSecret: '-add-your-client-secret-here-'
               responseType: code
-              # Reference for scopes https://developers.facebook.com/docs/facebook-login/permissions
+
+              # Reference for scopes https://developers.google.com/identity/protocols/googlescopes
               scopes:
                 - https://www.googleapis.com/auth/userinfo.email
                 - https://www.googleapis.com/auth/userinfo.profile
+
               # per default an account with a role (if 'authenticateRoles' is defined) is only created
               # if 'partyCreation' is TRUE a Party with the given 'fields' is created
               partyCreation: TRUE
-              display: popup
