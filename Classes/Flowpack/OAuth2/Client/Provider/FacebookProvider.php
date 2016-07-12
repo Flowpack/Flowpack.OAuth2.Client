@@ -17,6 +17,7 @@ use TYPO3\Flow\Log\SecurityLoggerInterface;
 use TYPO3\Flow\Security\Account;
 use TYPO3\Flow\Security\Authentication\TokenInterface;
 use TYPO3\Flow\Security\Exception\UnsupportedAuthenticationTokenException;
+use TYPO3\Flow\Security\Policy\PolicyService;
 
 /**
  */
@@ -28,6 +29,12 @@ class FacebookProvider extends AbstractClientProvider
      * @var SecurityLoggerInterface
      */
     protected $securityLogger;
+
+    /**
+     * @Flow\Inject
+     * @var PolicyService
+     */
+    protected $policyService;
 
     /**
      * @Flow\Inject
@@ -46,6 +53,12 @@ class FacebookProvider extends AbstractClientProvider
      * @var \Flowpack\OAuth2\Client\Endpoint\FacebookTokenEndpoint
      */
     protected $facebookTokenEndpoint;
+
+    /**
+     * @Flow\Inject
+     * @var \Flowpack\OAuth2\Client\Flow\FacebookFlow
+     */
+    protected $facebookFlow;
 
     /**
      * @Flow\Inject
@@ -90,15 +103,26 @@ class FacebookProvider extends AbstractClientProvider
         $authenticationToken->setAuthenticationStatus(TokenInterface::AUTHENTICATION_SUCCESSFUL);
         /** @var $account \TYPO3\Flow\Security\Account */
         $account = null;
+        $isNewCreatedAccount = false;
         $providerName = $this->name;
         $accountRepository = $this->accountRepository;
         $this->securityContext->withoutAuthorizationChecks(function () use ($tokenInformation, $providerName, $accountRepository, &$account) {
             $account = $accountRepository->findByAccountIdentifierAndAuthenticationProviderName($tokenInformation['user_id'], $providerName);
         });
+
         if ($account === null) {
             $account = new Account();
+            $isNewCreatedAccount = true;
             $account->setAccountIdentifier($tokenInformation['user_id']);
             $account->setAuthenticationProviderName($providerName);
+
+            // adding in Settings.yaml specified roles to the account
+            // so the account can be authenticate against a role in the frontend for example
+            $roles = array();
+            foreach ($this->options['authenticateRoles'] as $roleIdentifier) {
+                $roles[] = $this->policyService->getRole($roleIdentifier);
+            }
+            $account->setRoles($roles);
             $this->accountRepository->add($account);
         }
         $authenticationToken->setAccount($account);
@@ -106,9 +130,15 @@ class FacebookProvider extends AbstractClientProvider
         // request long-live token and attach that to the account
         $longLivedToken = $this->facebookTokenEndpoint->requestLongLivedToken($credentials['accessToken']);
         $account->setCredentialsSource($longLivedToken);
-        $this->accountRepository->update($account);
+        $account->authenticationAttempted(TokenInterface::AUTHENTICATION_SUCCESSFUL);
 
+        $this->accountRepository->update($account);
         $this->persistenceManager->persistAll();
+
+        // Only if defined a Party for the account is created
+        if ($this->options['partyCreation'] && $isNewCreatedAccount) {
+            $this->facebookFlow->createPartyAndAttachToAccountFor($authenticationToken);
+        }
     }
 
     /**

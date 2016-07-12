@@ -14,6 +14,7 @@ namespace Flowpack\OAuth2\Client\Flow;
 use Flowpack\OAuth2\Client\Exception\InvalidPartyDataException;
 use Flowpack\OAuth2\Client\Token\AbstractClientToken;
 use TYPO3\Flow\Annotations as Flow;
+use TYPO3\Flow\Configuration\ConfigurationManager;
 use TYPO3\Flow\Security\Account;
 use TYPO3\Flow\Security\Authentication\TokenInterface;
 use TYPO3\Flow\Security\Policy\PolicyService;
@@ -27,6 +28,18 @@ use TYPO3\Party\Domain\Repository\PartyRepository;
  */
 class FacebookFlow extends AbstractFlow implements FlowInterface
 {
+
+    /**
+     * @Flow\Inject
+     * @var ConfigurationManager
+     */
+    protected $configurationManager;
+
+    /**
+     * @Flow\Inject
+     * @var \TYPO3\Flow\Persistence\PersistenceManagerInterface
+     */
+    protected $persistenceManager;
 
     /**
      * @Flow\Inject
@@ -76,6 +89,15 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
      * @var array
      */
     protected $authenticationServicesUserData = array();
+
+    /**
+     * 0 => 'email',
+     * 1 => 'first_name',
+     * 2 => 'last_name'
+     *
+     * @var array
+     */
+    protected $authenticationServicesFields = array();
 
     /**
      * @var array
@@ -132,6 +154,7 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
      */
     public function createPartyAndAttachToAccountFor(AbstractClientToken $token)
     {
+        $this->initializeUserData($token);
         $userData = $this->authenticationServicesUserData[(string)$token];
 
         $party = new Person();
@@ -142,7 +165,9 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
         $electronicAddress = new ElectronicAddress();
         $electronicAddress->setType(ElectronicAddress::TYPE_EMAIL);
         $electronicAddress->setIdentifier($userData['email']);
+        $electronicAddress->isApproved(true);
         $party->addElectronicAddress($electronicAddress);
+        $party->setPrimaryElectronicAddress($electronicAddress);
 
         $partyValidator = $this->validatorResolver->getBaseValidatorConjunction('TYPO3\Party\Domain\Model\Person');
         $validationResult = $partyValidator->validate($party);
@@ -152,11 +177,10 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
 
         $account = $token->getAccount();
         $account->setParty($party);
-        // TODO: this must be properly specifiable (the Roles to add)
-        #$account->setRoles();
         $this->accountRepository->update($account);
-
         $this->partyRepository->add($party);
+
+        $this->persistenceManager->persistAll();
     }
 
     /**
@@ -170,13 +194,32 @@ class FacebookFlow extends AbstractFlow implements FlowInterface
     }
 
     /**
+     * getting all the defined data from facebook
      * @param AbstractClientToken $token
      */
     protected function initializeUserData(AbstractClientToken $token)
     {
         $credentials = $token->getCredentials();
         $this->facebookApiClient->setCurrentAccessToken($credentials['accessToken']);
-        $content = $this->facebookApiClient->query('/me')->getContent();
+        $query = $this->buildFacebookQuery();
+        $content = $this->facebookApiClient->query($query)->getContent();
         $this->authenticationServicesUserData[(string)$token] = json_decode($content, true);
+    }
+
+    /**
+     * builds the query from the fields in Settings.yaml
+     * there is no further check if the fields are allowed in the scopes
+     * for further information have a look at https://developers.facebook.com/docs/facebook-login/permissions
+     *
+     * @return string
+     */
+    protected function buildFacebookQuery()
+    {
+        $query = '/me';
+        $this->authenticationServicesFields = $this->configurationManager->getConfiguration(ConfigurationManager::CONFIGURATION_TYPE_SETTINGS, 'TYPO3.Flow.security.authentication.providers.FacebookOAuth2Provider.providerOptions.fields');
+        $fields = implode(',', $this->authenticationServicesFields);
+
+        $query = $query . '?fields=' . $fields;
+        return $query;
     }
 }
