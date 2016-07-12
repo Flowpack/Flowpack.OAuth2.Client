@@ -20,7 +20,7 @@ use TYPO3\Flow\Log\SecurityLoggerInterface;
 /**
  * @Flow\Scope("singleton")
  */
-class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEndpointInterface
+class GoogleTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEndpointInterface
 {
 
     /**
@@ -30,20 +30,19 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
     protected $securityLogger;
 
     /**
-     * Inspect the received access token as documented in https://developers.facebook.com/docs/facebook-login/access-tokens/, section Getting Info about Tokens and Debugging
      *
-     * @param array $tokenToInspect
+     * @param string $tokenToInspect
      * @return array
      * @throws OAuth2Exception
      */
     public function requestValidatedTokenInformation($tokenToInspect)
     {
-        $applicationToken = $this->requestClientCredentialsGrantAccessToken();
         $requestArguments = array(
             'input_token' => $tokenToInspect['access_token'],
-            'access_token' => $applicationToken['access_token']
+            'id_token' => $tokenToInspect['id_token']
         );
-        $request = Request::create(new Uri('https://graph.facebook.com/debug_token?' . http_build_query($requestArguments)));
+
+        $request = Request::create(new Uri('https://www.googleapis.com/oauth2/v3/tokeninfo?' . http_build_query($requestArguments)));
         $response = $this->requestEngine->sendRequest($request);
         $responseContent = $response->getContent();
         if ($response->getStatusCode() !== 200) {
@@ -51,18 +50,16 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
         }
 
         $responseArray = json_decode($responseContent, true, 16, JSON_BIGINT_AS_STRING);
-        $responseArray['data']['app_id'] = (string)$responseArray['data']['app_id'];
-        $responseArray['data']['user_id'] = (string)$responseArray['data']['user_id'];
+        $responseArray['aud'] = (string)$responseArray['aud'];
+        $responseArray['sub'] = (string)$responseArray['sub'];
         $clientIdentifier = (string)$this->clientIdentifier;
 
-        if (!$responseArray['data']['is_valid']
-            || $responseArray['data']['app_id'] !== $clientIdentifier
-        ) {
-            $this->securityLogger->log('Requesting validated token information from the Facebook endpoint did not succeed.', LOG_NOTICE, array('response' => var_export($responseArray, true), 'clientIdentifier' => $clientIdentifier));
+        if ($responseArray['aud'] !== $clientIdentifier) {
+            $this->securityLogger->log('Requesting validated token information from the Google endpoint did not succeed.', LOG_NOTICE, array('response' => var_export($responseArray, true), 'clientIdentifier' => $clientIdentifier));
             return false;
-        } else {
-            return $responseArray['data'];
         }
+
+        return $responseArray;
     }
 
     /**
@@ -71,6 +68,6 @@ class FacebookTokenEndpoint extends AbstractHttpTokenEndpoint implements TokenEn
      */
     public function requestLongLivedToken($shortLivedToken)
     {
-        return $this->requestAccessToken('fb_exchange_token', array('fb_exchange_token' => $shortLivedToken));
+        return $this->requestAccessToken('refresh_token', array('refresh_token' => $shortLivedToken));
     }
 }

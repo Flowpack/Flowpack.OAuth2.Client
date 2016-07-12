@@ -19,9 +19,12 @@ use TYPO3\Flow\Security\Authentication\TokenInterface;
 use TYPO3\Flow\Security\Exception\UnsupportedAuthenticationTokenException;
 use TYPO3\Flow\Security\Policy\PolicyService;
 
+use TYPO3\Flow\Configuration\ConfigurationManager;
+use TYPO3\Flow\Object\ObjectManagerInterface;
+
 /**
  */
-class FacebookProvider extends AbstractClientProvider
+class GoogleProvider extends AbstractClientProvider
 {
 
     /**
@@ -29,6 +32,19 @@ class FacebookProvider extends AbstractClientProvider
      * @var SecurityLoggerInterface
      */
     protected $securityLogger;
+
+
+    /**
+     * @Flow\Inject
+     * @var ConfigurationManager
+     */
+    protected $configurationManager;
+
+    /**
+     * @Flow\Inject
+     * @var ObjectManagerInterface
+     */
+    protected $objectManager;
 
     /**
      * @Flow\Inject
@@ -50,15 +66,15 @@ class FacebookProvider extends AbstractClientProvider
 
     /**
      * @Flow\Inject
-     * @var \Flowpack\OAuth2\Client\Endpoint\FacebookTokenEndpoint
+     * @var \Flowpack\OAuth2\Client\Endpoint\GoogleTokenEndpoint
      */
-    protected $facebookTokenEndpoint;
+    protected $googleTokenEndpoint;
 
     /**
      * @Flow\Inject
-     * @var \Flowpack\OAuth2\Client\Flow\FacebookFlow
+     * @var \Flowpack\OAuth2\Client\Flow\GoogleFlow
      */
-    protected $facebookFlow;
+    protected $googleFlow;
 
     /**
      * @Flow\Inject
@@ -80,22 +96,11 @@ class FacebookProvider extends AbstractClientProvider
         }
 
         $credentials = $authenticationToken->getCredentials();
-
-        // Inspect the received access token as documented in https://developers.facebook.com/docs/facebook-login/login-flow-for-web-no-jssdk/
-        $tokenInformation = $this->facebookTokenEndpoint->requestValidatedTokenInformation($credentials);
+        $scope = $this->buildScopeParameter();
+        $tokenInformation = $this->googleTokenEndpoint->requestValidatedTokenInformation($credentials, $scope);
 
         if ($tokenInformation === false) {
             $authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
-            return;
-        }
-
-        // Check if the permitted scopes suffice:
-        $necessaryScopes = $this->options['scopes'];
-        $scopesHavingPermissionFor = $tokenInformation['scopes'];
-        $requiredButNotPermittedScopes = array_diff($necessaryScopes, $scopesHavingPermissionFor);
-        if (count($requiredButNotPermittedScopes) > 0) {
-            $authenticationToken->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
-            $this->securityLogger->log('The permitted scopes do not satisfy the required once.', LOG_NOTICE, array('necessaryScopes' => $necessaryScopes, 'allowedScopes' => $scopesHavingPermissionFor));
             return;
         }
 
@@ -108,13 +113,13 @@ class FacebookProvider extends AbstractClientProvider
         $providerName = $this->name;
         $accountRepository = $this->accountRepository;
         $this->securityContext->withoutAuthorizationChecks(function () use ($tokenInformation, $providerName, $accountRepository, &$account) {
-            $account = $accountRepository->findByAccountIdentifierAndAuthenticationProviderName($tokenInformation['user_id'], $providerName);
+            $account = $accountRepository->findByAccountIdentifierAndAuthenticationProviderName($tokenInformation['sub'], $providerName);
         });
 
         if ($account === null) {
             $account = new Account();
             $isNewCreatedAccount = true;
-            $account->setAccountIdentifier($tokenInformation['user_id']);
+            $account->setAccountIdentifier($tokenInformation['sub']);
             $account->setAuthenticationProviderName($providerName);
 
             // adding in Settings.yaml specified roles to the account
@@ -126,10 +131,11 @@ class FacebookProvider extends AbstractClientProvider
             $account->setRoles($roles);
             $this->accountRepository->add($account);
         }
+
         $authenticationToken->setAccount($account);
 
         // request long-live token and attach that to the account
-        $longLivedToken = $this->facebookTokenEndpoint->requestLongLivedToken($credentials['access_token']);
+        $longLivedToken = $this->googleTokenEndpoint->requestLongLivedToken($credentials['access_token']);
         $account->setCredentialsSource($longLivedToken['access_token']);
         $account->authenticationAttempted(TokenInterface::AUTHENTICATION_SUCCESSFUL);
 
@@ -138,7 +144,7 @@ class FacebookProvider extends AbstractClientProvider
 
         // Only if defined a Party for the account is created
         if ($this->options['partyCreation'] && $isNewCreatedAccount) {
-            $this->facebookFlow->createPartyAndAttachToAccountFor($authenticationToken);
+            $this->googleFlow->createPartyAndAttachToAccountFor($authenticationToken);
         }
     }
 
@@ -149,6 +155,20 @@ class FacebookProvider extends AbstractClientProvider
      */
     public function getTokenClassNames()
     {
-        return array('Flowpack\OAuth2\Client\Token\FacebookToken');
+        return array('Flowpack\OAuth2\Client\Token\GoogleToken');
+    }
+
+    /**
+     * Returns the scopes
+     *
+     * @return array
+     */
+    protected function buildScopeParameter()
+    {
+        $scopes = $this->configurationManager->getConfiguration(ConfigurationManager::CONFIGURATION_TYPE_SETTINGS, 'TYPO3.Flow.security.authentication.providers.GoogleOAuth2Provider.providerOptions.scopes');
+        $scope = implode(' ', $scopes);
+        $scopes = array('scope' => $scope);
+
+        return $scopes;
     }
 }

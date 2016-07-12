@@ -14,3 +14,20 @@ Flowpack\OAuth2\Client\Endpoint\FacebookTokenEndpoint:
       setting: 'TYPO3.Flow.security.authentication.providers.FacebookOAuth2Provider.providerOptions.clientIdentifier'
     'clientSecret':
       setting: 'TYPO3.Flow.security.authentication.providers.FacebookOAuth2Provider.providerOptions.clientSecret'
+
+Flowpack\OAuth2\Client\Utility\GoogleApiClient:
+  properties:
+    'requestEngine':
+      object:
+        name: 'TYPO3\Flow\Http\Client\CurlEngine'
+    'appSecret':
+      setting: 'TYPO3.Flow.security.authentication.providers.GoogleOAuth2Provider.providerOptions.clientSecret'
+
+Flowpack\OAuth2\Client\Endpoint\GoogleTokenEndpoint:
+  properties:
+    'endpointUri':
+      setting: 'TYPO3.Flow.security.authentication.providers.GoogleOAuth2Provider.providerOptions.tokenEndpointUri'
+    'clientIdentifier':
+      setting: 'TYPO3.Flow.security.authentication.providers.GoogleOAuth2Provider.providerOptions.clientIdentifier'
+    'clientSecret':
+      setting: 'TYPO3.Flow.security.authentication.providers.GoogleOAuth2Provider.providerOptions.clientSecret'

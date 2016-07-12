@@ -99,7 +99,7 @@ abstract class AbstractHttpTokenEndpoint implements TokenEndpointInterface
      */
     public function requestClientCredentialsGrantAccessToken($scope = array())
     {
-        $accessToken = $this->requestAccessToken(TokenEndpointInterface::GRANT_TYPE_CLIENT_CREDENTIALS);
+        $accessToken = $this->requestAccessToken(TokenEndpointInterface::GRANT_TYPE_CLIENT_CREDENTIALS, $scope);
         return $accessToken;
     }
 
@@ -126,14 +126,27 @@ abstract class AbstractHttpTokenEndpoint implements TokenEndpointInterface
             'client_secret' => $this->clientSecret
         );
         $parameters = Arrays::arrayMergeRecursiveOverrule($parameters, $additionalParameters, false, false);
+
         $request = Request::create(new Uri($this->endpointUri), 'POST', $parameters);
         $request->setHeader('Content-Type', 'application/x-www-form-urlencoded');
 
         $response = $this->requestEngine->sendRequest($request);
+
         if ($response->getStatusCode() !== 200) {
             throw new OAuth2Exception(sprintf('The response when requesting the access token was not as expected, code and message was: %d %s', $response->getStatusCode(), $response->getContent()), 1383749757);
         }
-        parse_str($response->getContent(), $responseComponents);
-        return $responseComponents['access_token'];
+
+        // expects Tokens from Facebook or Google
+        // google returns json
+        // facebook an string with parameters
+        parse_str($response->getContent(), $responseComponentsParsedString);
+        if (!array_key_exists('access_token', $responseComponentsParsedString)){
+            $responseComponents = $response->getContent();
+            $responseComponents = json_decode($responseComponents, true);
+        } else {
+            $responseComponents = $responseComponentsParsedString;
+        }
+
+        return $responseComponents;
     }
 }
